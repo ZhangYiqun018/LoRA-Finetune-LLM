@@ -1,7 +1,10 @@
-from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, set_seed
+from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, set_seed, EvalPrediction
 from utils import get_config, get_dataset, get_model, get_tokenizer
 import os
 import datetime
+from evaluate import load
+import logging
+import sys
 
 class Train:
     def __init__(
@@ -13,7 +16,7 @@ class Train:
         set_seed(config['TRAIN']['seed'])
 
         model_path = config['PATH']['model_path']
-        dataset_path = config['PATH']['dataset_path']
+        dataset_path = config['PATH']['dataset_path'] if config['PATH']['local'] else config['PATH']['dataset_card']
         do_lora = config['LORA']['do_lora']
 
         current_time = datetime.datetime.now().strftime("_%Y_%m_%d_%H")
@@ -21,9 +24,9 @@ class Train:
         if do_lora:
             model_name = 'lora_' + model_name
 
-        self.train_args = config['TRAIN']
-        self.lora_args = config['LORA']
-        self.output_path = os.path.join(config['PATH']['output_path'], model_name + current_time)
+        self.train_args               = config['TRAIN']
+        self.lora_args                = config['LORA']
+        self.output_path              = os.path.join(config['PATH']['output_path'], model_name + current_time)
         self.train_args['output_dir'] = self.output_path
         
         self.model      = get_model(model_card=model_path, do_lora=do_lora, lora_config=self.lora_args)
@@ -39,6 +42,17 @@ class Train:
     def save_model(self):
         self.model.save_pretrained(self.output_path)
 
+    def compute_metrics(self, eval_pred: EvalPrediction):
+        logits, labels = eval_pred
+        print(logits.shape)
+        predictions = self.tokenizer.batch_decode(logits)
+        labels = self.tokenizer.batch_decode(logits)
+
+        bertscore = load("bertscore")
+
+        result = bertscore.compute(predictions=predictions, references=labels, lang='en')
+        return result      
+
     def loop(self):
         self.train_args = self.init_trainargs()
 
@@ -49,14 +63,16 @@ class Train:
         )
 
         train_dataset = self.dataset['train']
-        test_dataset = self.dataset['test']
+        valid_dataset = self.dataset['validation']
 
         trainer = Trainer(
-            model         = self.model,
-            args          = self.train_args,
-            train_dataset = train_dataset,
-            tokenizer     = self.tokenizer,
-            data_collator = self.datacollator,
+            model           = self.model,
+            args            = self.train_args,
+            train_dataset   = train_dataset,
+            eval_dataset    = valid_dataset,
+            tokenizer       = self.tokenizer,
+            data_collator   = self.datacollator,
+            compute_metrics = lambda x: self.compute_metrics(x),
         )
         
         trainer.train()
@@ -73,16 +89,4 @@ if __name__ == '__main__':
     flan_t5_train.init_trainargs()
 
     flan_t5_train.loop()
-
-    # datacollator = DataCollatorForSeq2Seq(flan_t5_train.tokenizer, padding=True, return_tensors='pt')
-
-    # from torch.utils.data import DataLoader
-
-    # loader = DataLoader(dataset=flan_t5_train.dataset['train'], batch_size=1, collate_fn=datacollator)
-    # for a in loader:
-    #     print(a)
-    #     break
-
-    # for data in flan_t5_train.dataset['train']:
-    #     print(data)
         

@@ -20,6 +20,7 @@ def pre_process(example, tokenizer: PreTrainedTokenizerBase):
         text        = input,
         text_target = output,
         padding     = True,
+        truncation  = 'only_first',
     )
 
     return example_token
@@ -60,7 +61,6 @@ def get_dataset(
     else:
         dataset = load_dataset(
             data_path,
-            split='train'
         )
     
     dataset = dataset.map(
@@ -70,6 +70,16 @@ def get_dataset(
     dataset = dataset.remove_columns(
         ['input', 'output']
     )
+
+    if 'knowledge_type' in dataset.column_names:
+        dataset = dataset.remove_columns(
+            ['knowledge_type']
+        )
+    if 'task_type' in dataset.column_names:
+        dataset = dataset.remove_columns(
+            ['task_type']
+        )
+
     return dataset
 
 

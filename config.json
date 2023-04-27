@@ -1,33 +1,39 @@
 {
     "CUDA": {
-        "CUDA_VISIBLE_DEVICES" : "4"
+        "CUDA_VISIBLE_DEVICES" : "1"
     },
     "PATH": {
-        "dataset_card": "Estwld/atomic-instruct-v1",
+        "dataset_card": "Estwld/atomic2020-instruct",
         "dataset_path": "./dataset",
-        "model_path"  : "/datas/huggingface/Flan-T5/flan-t5-xl",
+        "model_path"  : "google/flan-t5-small",
         "output_path" : "./results",
         "log_path"    : "./log",
-        "local"       : true
+        "local"       : false
     },
     "TRAIN": {
         "learning_rate"              : 1e-5,
-        "warmup_steps"               : 500,
-        "fp16"                       : false, 
+        "evaluation_strategy"        : "epoch",
+        "warmup_steps"               : 0.01,
+        "fp16"                       : false,
         "bf16"                       : true,
         "weight_decay"               : 1e-3,
         "num_train_epochs"           : 2,
-        "per_device_train_batch_size": 8,
+        "per_device_train_batch_size": 16,
+        "per_device_eval_batch_size" : 32,
         "dataloader_num_workers"     : 8,
+        "dataloader_pin_memory"      : true,
         "optim"                      : "adamw_torch",
         "load_best_model_at_end"     : false,
         "greater_is_better"          : true,
         "save_strategy"              : "epoch",
-        "report_to"                  : "none",
-        "logging_dir"                : "./log",
+        "report_to"                  : "wandb",
+        "logging_dir"                : "./logs",
         "logging_strategy"           : "steps",
-        "logging_steps"              : 500,
-        "seed"                       : 42
+        "logging_steps"              : 1000,
+        "seed"                       : 42,
+        "resume_from_checkpoint"     : false,
+        "auto_find_batch_size"       : true,
+        "group_by_length"            : true
     },
     "LORA": {
         "do_lora"     : true,
@@ -43,5 +49,8 @@
         "repetition_penalty"  : 2.5,
         "length_penalty"      : 1.0,
         "num_return_sequences": 1
+    },
+    "BACKUP": {
+        "eval_steps": 1000
     }
 }
