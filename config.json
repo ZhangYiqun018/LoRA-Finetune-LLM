@@ -1,6 +1,6 @@
 {
     "CUDA": {
-        "CUDA_VISIBLE_DEVICES" : "1"
+        "CUDA_VISIBLE_DEVICES" : "1,2"
     },
     "PATH": {
         "dataset_card": "Estwld/atomic2020-instruct",
@@ -11,16 +11,16 @@
         "local"       : false
     },
     "TRAIN": {
-        "learning_rate"              : 1e-5,
+        "learning_rate"              : 5e-5,
         "evaluation_strategy"        : "epoch",
-        "warmup_steps"               : 0.01,
+        "warmup_steps"               : 0.001,
         "fp16"                       : false,
         "bf16"                       : true,
-        "weight_decay"               : 1e-3,
-        "num_train_epochs"           : 2,
-        "per_device_train_batch_size": 16,
-        "per_device_eval_batch_size" : 32,
-        "dataloader_num_workers"     : 8,
+        "weight_decay"               : 1e-4,
+        "num_train_epochs"           : 3,
+        "per_device_train_batch_size": 32,
+        "per_device_eval_batch_size" : 8,
+        "dataloader_num_workers"     : 4,
         "dataloader_pin_memory"      : true,
         "optim"                      : "adamw_torch",
         "load_best_model_at_end"     : false,
@@ -33,14 +33,16 @@
         "seed"                       : 42,
         "resume_from_checkpoint"     : false,
         "auto_find_batch_size"       : true,
-        "group_by_length"            : true
+        "group_by_length"            : false,
+        "run_name"                   : "test"
     },
     "LORA": {
-        "do_lora"     : true,
-        "task_type"   : "SEQ_2_SEQ_LM",
-        "r"           : 8,
-        "lora_alpha"  : 16,
-        "lora_dropout": 0.05
+        "do_lora"       : false,
+        "task_type"     : "SEQ_2_SEQ_LM",
+        "target_modules": ["q", "v"],
+        "r"             : 8,
+        "lora_alpha"    : 16,
+        "lora_dropout"  : 0.05
     },
     "GENERATE": {
         "num_beams"           : 5,

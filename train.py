@@ -1,10 +1,8 @@
-from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, set_seed, EvalPrediction
+from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, DataCollatorForSeq2Seq, set_seed, EvalPrediction
 from utils import get_config, get_dataset, get_model, get_tokenizer
 import os
 import datetime
 from evaluate import load
-import logging
-import sys
 
 class Train:
     def __init__(
@@ -34,7 +32,7 @@ class Train:
         self.dataset    = get_dataset(data_path=dataset_path, tokenizer=self.tokenizer, local=config['PATH']['local'])
         
     def init_trainargs(self):
-        train_args = TrainingArguments(
+        train_args = Seq2SeqTrainingArguments(
             **self.train_args,
         )
         return train_args
@@ -53,6 +51,9 @@ class Train:
         result = bertscore.compute(predictions=predictions, references=labels, lang='en')
         return result      
 
+    def preprocess_logits_for_metrics(self,):
+        pass
+
     def loop(self):
         self.train_args = self.init_trainargs()
 
@@ -62,10 +63,10 @@ class Train:
             padding        = True,
         )
 
-        train_dataset = self.dataset['train']
+        train_dataset = self.dataset['train'].select(range(100))
         valid_dataset = self.dataset['validation']
 
-        trainer = Trainer(
+        trainer = Seq2SeqTrainer(
             model           = self.model,
             args            = self.train_args,
             train_dataset   = train_dataset,

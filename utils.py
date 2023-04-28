@@ -29,8 +29,9 @@ def get_model(
     model_card: str,
     do_lora: bool,
     lora_config: Dict,
+    use_8bit: bool,
 ):
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_card)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_card, device_map="auto")
     if do_lora:
         print(" * * * do lora * * * ")
         lora_config.pop('do_lora')
