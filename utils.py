@@ -1,7 +1,7 @@
 # %%
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, DataCollatorForSeq2Seq, Seq2SeqTrainer, AutoModelForSeq2SeqLM
 from datasets import load_dataset, load_from_disk
-from peft import LoraConfig, get_peft_config, get_peft_model, get_peft_model_state_dict
+from peft import LoraConfig, get_peft_config, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
 import json
 from typing import Dict
 
@@ -20,7 +20,8 @@ def pre_process(example, tokenizer: PreTrainedTokenizerBase):
         text        = input,
         text_target = output,
         padding     = True,
-        truncation  = 'only_first',
+        max_length  = 512,
+        truncation  = True,
     )
 
     return example_token
@@ -29,12 +30,17 @@ def get_model(
     model_card: str,
     do_lora: bool,
     lora_config: Dict,
-    use_8bit: bool,
+    load_in_8bit: bool,
 ):
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_card, device_map="auto")
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_card, device_map="auto", load_in_8bit=load_in_8bit)
+        
     if do_lora:
+        if load_in_8bit:
+            print(" * * * use 8bit * * * ")
+            model = prepare_model_for_int8_training(model)
         print(" * * * do lora * * * ")
         lora_config.pop('do_lora')
+        lora_config.pop('load_in_8bit')
         lora_config = LoraConfig(
             **lora_config,
         )
@@ -48,7 +54,7 @@ def get_model(
 def get_tokenizer(
     model_card: str,
 ):
-    tokenizer = AutoTokenizer.from_pretrained(model_card)
+    tokenizer = AutoTokenizer.from_pretrained(model_card, use_fast=False, padding_side='right')
     tokenizer.sep_token = '<sep>'
     return tokenizer
 

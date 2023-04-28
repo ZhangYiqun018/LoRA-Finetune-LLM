@@ -16,6 +16,7 @@ class Train:
         model_path = config['PATH']['model_path']
         dataset_path = config['PATH']['dataset_path'] if config['PATH']['local'] else config['PATH']['dataset_card']
         do_lora = config['LORA']['do_lora']
+        load_in_8bit = config['LORA']['load_in_8bit']
 
         current_time = datetime.datetime.now().strftime("_%Y_%m_%d_%H")
         model_name = model_path.split('/')[-1]
@@ -27,7 +28,7 @@ class Train:
         self.output_path              = os.path.join(config['PATH']['output_path'], model_name + current_time)
         self.train_args['output_dir'] = self.output_path
         
-        self.model      = get_model(model_card=model_path, do_lora=do_lora, lora_config=self.lora_args)
+        self.model      = get_model(model_card=model_path, do_lora=do_lora, lora_config=self.lora_args, load_in_8bit=load_in_8bit)
         self.tokenizer  = get_tokenizer(model_card=model_path)
         self.dataset    = get_dataset(data_path=dataset_path, tokenizer=self.tokenizer, local=config['PATH']['local'])
         
@@ -58,12 +59,14 @@ class Train:
         self.train_args = self.init_trainargs()
 
         self.datacollator = DataCollatorForSeq2Seq(
-            tokenizer      = self.tokenizer,
-            return_tensors = 'pt',
-            padding        = True,
+            tokenizer          = self.tokenizer,
+            return_tensors     = 'pt',
+            padding            = "max_length",
+            max_length         = 512,
+            label_pad_token_id = -100,
         )
 
-        train_dataset = self.dataset['train'].select(range(100))
+        train_dataset = self.dataset['validation']
         valid_dataset = self.dataset['validation']
 
         trainer = Seq2SeqTrainer(
@@ -76,7 +79,8 @@ class Train:
             compute_metrics = lambda x: self.compute_metrics(x),
         )
         
-        trainer.train()
+        trainer.evaluate()
+        # trainer.train()
 
         self.save_model()
 
