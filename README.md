@@ -5,7 +5,7 @@
 目前存在的问题:
 
 - [ ] 开lora时并行训练有问题
-- [ ] evaluate时显存爆炸
+- [x] evaluate时显存爆炸
     设置`predict_with_generate = True`可以解决这个问题
 - [ ] evaluate模式不能到底
 
