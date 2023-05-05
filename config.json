@@ -1,6 +1,6 @@
 {
     "CUDA": {
-        "CUDA_VISIBLE_DEVICES" : "4"
+        "CUDA_VISIBLE_DEVICES" : "6"
     },
     "PATH": {
         "dataset_card"    : "Estwld/atomic2020-instruct",
@@ -8,7 +8,7 @@
         "model_path"      : "/datas/huggingface/Flan-T5/flan-t5-small",
         "model_card"      : "google/flan-t5-xxl",
         "lora_model_path" : "./results/lora_flan-t5-small_2023_04_28_12",
-        "output_path"     : "./results",
+        "output_path"     : "./results/eval",
         "log_path"        : "./log",
         "use_localdataset": false,
         "use_localmodel"  : true

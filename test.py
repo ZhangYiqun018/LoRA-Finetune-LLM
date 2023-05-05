@@ -47,29 +47,64 @@ class Eval(Train):
     
     def compute_bleu(self, predictions, labels):
         bleu = load("bleu")
-
         result = {}
         bleu_1 = bleu.compute(predictions=predictions, references=labels, max_order=1)
         result['bleu1'] = bleu_1['bleu']
         bleu_2 = bleu.compute(predictions=predictions, references=labels, max_order=2)
         result['bleu2'] = bleu_2['bleu']
+        bleu_3 = bleu.compute(predictions=predictions, references=labels, max_order=3)
+        result['bleu3'] = bleu_1['bleu']
+        bleu_4 = bleu.compute(predictions=predictions, references=labels, max_order=4)
+        result['bleu4'] = bleu_2['bleu']
+
         return result
+
+    def compute_meteor(self, predictions, labels):
+        """
+        METEOR (Metric for Evaluation of Translation with Explicit ORdering)是一个机器翻译评估指标，它是根据精度和召回率的谐波平均值来计算的，其中召回率的权重高于精度。
+        """
+        meteor = load('meteor')
+        results = meteor.compute(
+            predictions = predictions,
+            labels      = labels,
+            alpha       = 0.9,
+            beta        = 3,
+            gamma       = 0.5
+        )
+        return results
+    
+    def compute_cider(self, predictions, labels):
+        pass
+    
+    def postprocess_function(self, example):
+        example = example.replace('none', 'NULL')
+        return ', '.join(example.split('sep>'))
 
     def compute_metrics(self, eval_pred: EvalPrediction):
         logits, labels = eval_pred
 
         # 替换-100
         logits = np.where(logits != -100, logits, self.tokenizer.pad_token_id)
+        labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+
         predictions = self.tokenizer.batch_decode(logits, skip_special_tokens=True)
-        labels = self.tokenizer.batch_decode(logits, skip_special_tokens=True)
+        labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+
+        predictions = [self.postprocess_function(text) for text in predictions]
+        labels = [self.postprocess_function(text) for text in labels]
 
         result = dict()
         # metric1 bert_score
         result.update(self.compute_bertscore(predictions, labels))
-        # metric2 bleu1,2
+        # metric2 bleu-1,2,3,4
         result.update(self.compute_bleu(predictions, labels))
         # metric3 rouge-l
         result.update(self.compute_rougeL(predictions, labels))
+        # metric4 meteor
+        # result.update(self.compute_meteor(predictions, labels))
+        # metric5 cider
+        # result.update(self.compute_cider(predictions, labels))
+
         result['predictions'] = predictions
         result['labels'] = labels
         with open('result.txt', 'w') as w:
@@ -98,7 +133,7 @@ class Eval(Train):
             label_pad_token_id = self.tokenizer.pad_token_id,
         )
 
-        valid_dataset = self.dataset['validation']
+        valid_dataset = self.dataset['validation'].select(range(100))
 
         trainer = Seq2SeqTrainer(
             model           = self.model,

@@ -5,3 +5,5 @@ log
 output
 .DS_Store
 __pycache__
+*.txt
+test_meteor.py
