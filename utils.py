@@ -32,7 +32,7 @@ def get_model(
     lora_config: Dict,
     load_in_8bit: bool,
 ):
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_card, device_map="auto", load_in_8bit=load_in_8bit)
+    model = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model_name_or_path=model_card, device_map="auto", load_in_8bit=load_in_8bit)
         
     if do_lora:
         if load_in_8bit:
@@ -54,7 +54,7 @@ def get_model(
 def get_tokenizer(
     model_card: str,
 ):
-    tokenizer = AutoTokenizer.from_pretrained(model_card, use_fast=False, padding_side='right')
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_card, use_fast=True, padding_side='right')
     tokenizer.sep_token = '<sep>'
     return tokenizer
 
